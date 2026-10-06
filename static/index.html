@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Uploader</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h1>File Uploader</h1>
+            </div>
+            <div class="account-status" id="accountStatus">
+                <span class="status-dot"></span>
+                <span id="accountText">Connecting...</span>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-file-upload"></i>
+                </div>
+                <h2>Drag & Drop Files Here</h2>
+                <p>or</p>
+                <button class="browse-btn" id="browseBtn">
+                    <i class="fas fa-folder-open"></i>
+                    Browse Files
+                </button>
+                <input type="file" id="fileInput" multiple hidden>
+                <p class="file-types">All file types supported</p>
+            </div>
+
+            <div class="file-list" id="fileList">
+                <h3>Selected Files</h3>
+                <div class="files-container" id="filesContainer"></div>
+            </div>
+
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-header">
+                    <span>Uploading...</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-info" id="progressInfo"></div>
+            </div>
+
+            <div class="results" id="results" style="display: none;">
+                <h3>Upload Complete! 🎉</h3>
+                <div class="result-links" id="resultLinks"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                <i class="fas fa-code"></i> Made by 
+                <span class="discord-name" onclick="copyDiscord()" title="Click to copy Discord username">
+                    <i class="fab fa-discord"></i> @hidden_rhyhtm
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage"></span>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const filesContainer = document.getElementById('filesContainer');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressInfo = document.getElementById('progressInfo');
+        const results = document.getElementById('results');
+        const resultLinks = document.getElementById('resultLinks');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        
+        let selectedFiles = [];
+
+        // Check account status
+        function checkAccountStatus() {
+            axios.get('/api/account-info')
+                .then(response => {
+                    const accountStatus = document.getElementById('accountStatus');
+                    const accountText = document.getElementById('accountText');
+                    if (response.data.success) {
+                        accountStatus.classList.add('connected');
+                        accountText.textContent = 'Connected';
+                    } else {
+                        accountStatus.classList.add('error');
+                        accountText.textContent = 'Connection Error';
+                    }
+                })
+                .catch(error => {
+                    const accountStatus = document.getElementById('accountStatus');
+                    const accountText = document.getElementById('accountText');
+                    accountStatus.classList.add('error');
+                    accountText.textContent = 'Connection Error';
+                });
+        }
+
+        // Copy Discord username
+        function copyDiscord() {
+            const discordName = '@Hidden_Rhyhtm';
+            navigator.clipboard.writeText(discordName).then(() => {
+                showToast('Discord username copied!');
+            }).catch(err => {
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = discordName;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast('Discord username copied!');
+            });
+        }
+
+        // File selection
+        browseBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-icon') || e.target.closest('h2') || e.target.closest('p')) {
+                fileInput.click();
+            }
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            displayFiles();
+        }
+
+        function displayFiles() {
+            filesContainer.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                const fileSize = formatFileSize(file.size);
+                const fileIcon = getFileIcon(file.name);
+                
+                fileItem.innerHTML = `
+                    <div class="file-icon">${fileIcon}</div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${fileSize}</div>
+                    </div>
+                    <button class="remove-file" onclick="removeFile(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                filesContainer.appendChild(fileItem);
+            });
+            
+            if (selectedFiles.length > 0) {
+                document.querySelector('.file-list').style.display = 'block';
+                uploadFiles();
+            }
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displayFiles();
+            if (selectedFiles.length === 0) {
+                document.querySelector('.file-list').style.display = 'none';
+            }
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
+                'pdf': '📄', 'doc': '📝', 'docx': '📝', 'txt': '📄',
+                'zip': '📦', 'rar': '📦', '7z': '📦',
+                'mp3': '🎵', 'wav': '🎵', 'flac': '🎵',
+                'mp4': '🎬', 'avi': '🎬', 'mkv': '🎬', 'mov': '🎬',
+                'exe': '⚙️', 'apk': '📱', 'iso': '💿'
+            };
+            return icons[ext] || '📁';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        async function uploadFiles() {
+            uploadProgress.style.display = 'block';
+            results.style.display = 'none';
+            resultLinks.innerHTML = '';
+            
+            let uploadedCount = 0;
+            const totalFiles = selectedFiles.length;
+            
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                progressInfo.textContent = `Uploading ${file.name} (${i + 1}/${totalFiles})`;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    const response = await axios.post('/api/upload', formData, {
+                        onUploadProgress: (progressEvent) => {
+                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            progressFill.style.width = percentCompleted + '%';
+                            progressPercentage.textContent = percentCompleted + '%';
+                        }
+                    });
+                    
+                    if (response.data.success) {
+                        uploadedCount++;
+                        addResultLink(file.name, response.data.link);
+                        showToast(`File uploaded successfully: ${file.name}`);
+                    } else {
+                        showToast(`Failed to upload: ${file.name}`, true);
+                    }
+                } catch (error) {
+                    showToast(`Error uploading: ${file.name}`, true);
+                }
+                
+                // Update overall progress
+                const overallProgress = ((i + 1) / totalFiles) * 100;
+                progressFill.style.width = overallProgress + '%';
+                progressPercentage.textContent = Math.round(overallProgress) + '%';
+            }
+            
+            progressInfo.textContent = `Upload complete! ${uploadedCount}/${totalFiles} files uploaded`;
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                if (uploadedCount > 0) {
+                    results.style.display = 'block';
+                }
+            }, 2000);
+        }
+
+        function addResultLink(filename, link) {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'result-item';
+            
+            resultItem.innerHTML = `
+                <div class="result-file">${filename}</div>
+                <div class="result-link-container">
+                    <input type="text" class="result-link" value="${link}" readonly>
+                    <button class="copy-btn" onclick="copyLink(this)">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="open-btn" onclick="openLink('${link}')">
+                        <i class="fas fa-external-link-alt"></i> Open
+                    </button>
+                </div>
+            `;
+            
+            resultLinks.appendChild(resultItem);
+        }
+
+        function copyLink(button) {
+            const linkInput = button.parentElement.querySelector('.result-link');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                button.classList.add('copied');
+                showToast('Link copied to clipboard!');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                // Fallback
+                document.execCommand('copy');
+                showToast('Link copied to clipboard!');
+            });
+        }
+
+        function openLink(link) {
+            window.open(link, '_blank');
+        }
+
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            if (isError) {
+                toast.classList.add('error');
+            } else {
+                toast.classList.remove('error');
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        checkAccountStatus();
+    </script>
+</body>
+</html>
