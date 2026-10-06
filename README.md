@@ -10,7 +10,7 @@
   <a href="https://file-uploader-25hn.onrender.com">
     <img src="https://img.shields.io/badge/🚀%20LIVE%20DEMO-Open%20Uploader-7C3AED?style=for-the-badge" alt="Live Demo">
   </a>
-  <a href="https://github.com/Hidden-Rhythm/file-to-urlr">
+  <a href="https://github.com/Hidden-Rhythm/file-to-url">
     <img src="https://img.shields.io/badge/💻%20SOURCE-GitHub-18181B?style=for-the-badge&logo=github" alt="Source Code">
   </a>
 </p>
