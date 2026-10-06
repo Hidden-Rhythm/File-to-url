@@ -131,7 +131,7 @@ file-uploader/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Hidden-Rhythm/file-tp-url.git
+git clone https://github.com/Hidden-Rhythm/file-to-url.git
 cd file-to-url
 ```
 
