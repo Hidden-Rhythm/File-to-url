@@ -10,7 +10,7 @@
   <a href="https://file-uploader-25hn.onrender.com">
     <img src="https://img.shields.io/badge/🚀%20LIVE%20DEMO-Open%20Uploader-7C3AED?style=for-the-badge" alt="Live Demo">
   </a>
-  <a href="https://github.com/Hidden-Rhythm/file-to-url">
+  <a href="https://github.com/Hidden-Rhythm/File-to-url">
     <img src="https://img.shields.io/badge/💻%20SOURCE-GitHub-18181B?style=for-the-badge&logo=github" alt="Source Code">
   </a>
 </p>
@@ -131,8 +131,8 @@ file-uploader/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Hidden-Rhythm/file-to-url.git
-cd file-to-url
+git clone https://github.com/Hidden-Rhythm/File-to-url.git
+cd File-to-url
 ```
 
 ### 2. Install dependencies
